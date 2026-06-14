@@ -7,13 +7,14 @@ use App\Http\Controllers\MahasiswaController;
 use App\Http\Controllers\SearchController;
 use App\Http\Controllers\ImportExportController;
 use App\Http\Controllers\LogController;
+use App\Http\Controllers\EmailController;
 
-// ── Auth ──
+// — Auth —
 Route::get('/login',  [AuthController::class, 'showLogin'])->name('login');
 Route::post('/login', [AuthController::class, 'login']);
-Route::post('/logout', [AuthController::class, 'logout'])->name('logout');
+Route::post('/logout',[AuthController::class, 'logout'])->name('logout');
 
-// ── Protected Routes ──
+// — Protected Routes —
 Route::middleware('auth')->group(function () {
 
     // Dashboard
@@ -26,11 +27,16 @@ Route::middleware('auth')->group(function () {
     Route::get('/search', [SearchController::class, 'index'])->name('search.index');
 
     // Import / Export
-    Route::get('/import-export',          [ImportExportController::class, 'index'])->name('import-export.index');
-    Route::post('/import-export/import',  [ImportExportController::class, 'import'])->name('import-export.import');
-    Route::get('/import-export/export/{format}', [ImportExportController::class, 'export'])->name('import-export.export');
+    Route::get('/import-export',                [ImportExportController::class, 'index']) ->name('import-export.index');
+    Route::post('/import-export/import',        [ImportExportController::class, 'import'])->name('import-export.import');
+    Route::get('/import-export/export/{format}',[ImportExportController::class, 'export'])->name('import-export.export');
 
     // Activity Log
-    Route::get('/log',    [LogController::class, 'index'])->name('log.index');
-    Route::delete('/log', [LogController::class, 'clear'])->name('log.clear');
+    Route::get('/log',   [LogController::class, 'index'])->name('log.index');
+    Route::delete('/log',[LogController::class, 'clear'])->name('log.clear');
+
+    // Email Notifikasi
+    Route::post('/email/broadcast',  [EmailController::class, 'broadcast'])->name('email.broadcast');
+    Route::post('/email/individual', [EmailController::class, 'individual'])->name('email.individual');
+
 });

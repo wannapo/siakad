@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use Illuminate\Support\ServiceProvider;
-use Illuminate\Support\Facades\URL; // <-- WAJIB IMPORT INI
+use Illuminate\Support\Facades\URL;
+use App\Models\Mahasiswa;
+use App\Observers\MahasiswaObserver;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -24,5 +26,8 @@ class AppServiceProvider extends ServiceProvider
         if (config('app.env') === 'production' || isset($_SERVER['HTTPS']) || (env('APP_URL') && str_contains(env('APP_URL'), 'https://'))) {
             URL::forceScheme('https');
         }
+
+        // Registrasi Observer untuk Real-time Activity Log
+        Mahasiswa::observe(MahasiswaObserver::class);
     }
 }
