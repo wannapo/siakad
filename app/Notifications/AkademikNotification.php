@@ -2,40 +2,25 @@
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 use Illuminate\Support\Facades\Log;
 
-class AkademikNotification extends Notification implements ShouldQueue
+class AkademikNotification extends Notification
 {
-    use Queueable;
-
-    // Retry & timeout config
-    public int $tries   = 3;
-    public int $backoff = 60;
-    public int $timeout = 30;
-
     public function __construct(
-        public string  $type,         // 'pengumuman' | 'nilai' | 'tagihan'
+        public string  $type,
         public string  $judul,
         public string  $pesan,
         public ?string $actionUrl   = null,
         public ?string $actionLabel = null,
     ) {}
 
-    /**
-     * Channel yang dipakai: email + simpan ke database (notif in-app)
-     */
     public function via(object $notifiable): array
     {
         return ['mail', 'database'];
     }
 
-    /**
-     * Format email
-     */
     public function toMail(object $notifiable): MailMessage
     {
         $icon = match ($this->type) {
@@ -58,9 +43,6 @@ class AkademikNotification extends Notification implements ShouldQueue
             ->salutation('Salam, Tim SISMAKA');
     }
 
-    /**
-     * Format simpan ke tabel notifications (in-app bell icon)
-     */
     public function toDatabase(object $notifiable): array
     {
         return [
@@ -71,9 +53,6 @@ class AkademikNotification extends Notification implements ShouldQueue
         ];
     }
 
-    /**
-     * Kalau semua retry gagal, catat di log
-     */
     public function failed(\Throwable $e): void
     {
         Log::error('AkademikNotification gagal', [
