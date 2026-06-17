@@ -38,7 +38,7 @@ class EmailController extends Controller
 
         // FIX: Mengubah 'EMAIL' menjadi 'email' huruf kecil sesuai struktur database
         ActivityLog::create([
-            'aksi'       => 'email', 
+            'aksi'       => 'crud', 
             'keterangan' => "Broadcast email '{$request->subject}' dikirim ke {$mahasiswaList->count()} mahasiswa",
             'user_id'    => auth()->id(),
             'durasi_ms'  => 0,
@@ -84,7 +84,7 @@ class EmailController extends Controller
         
         // FIX: Mengubah 'EMAIL' menjadi 'email' huruf kecil sesuai struktur database
         ActivityLog::create([
-            'aksi'       => 'email', 
+            'aksi'       => 'crud', 
             'keterangan' => "Email '{$request->subject}' dikirim ke: {$names}",
             'user_id'    => auth()->id(),
             'durasi_ms'  => 0,
