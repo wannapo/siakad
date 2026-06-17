@@ -1,54 +1,95 @@
 <?php
 
-namespace App\Mail;
+namespace App\Http\Controllers;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
-use Illuminate\Mail\Mailable;
-use Illuminate\Mail\Mailables\Attachment;
-use Illuminate\Mail\Mailables\Content;
-use Illuminate\Mail\Mailables\Envelope;
-use Illuminate\Queue\SerializesModels;
+use App\Models\Mahasiswa;
+use App\Models\ActivityLog;
+use App\Notifications\AkademikNotification;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Notification;
 
-class MahasiswaMail extends Mailable
+class EmailController extends Controller
 {
-    use Queueable, SerializesModels;
-
-    /**
-     * Create a new message instance.
-     */
-    public function __construct()
+    public function broadcast(Request $request)
     {
-        //
+        $request->validate([
+            'type'    => 'required|in:pengumuman,nilai,tagihan',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+            'url'     => 'nullable|string|max:255',
+        ]);
+
+        $mahasiswaList = Mahasiswa::whereNotNull('email')->get();
+
+        if ($mahasiswaList->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Tidak ada mahasiswa dengan email terdaftar.',
+            ], 422);
+        }
+
+        Notification::send($mahasiswaList, new AkademikNotification(
+            type:        $request->type,
+            judul:       $request->subject,
+            pesan:       $request->message,
+            actionUrl:   $request->url ?: null,
+            actionLabel: 'Lihat Detail',
+        ));
+
+        ActivityLog::create([
+            'aksi'       => 'crud',
+            'keterangan' => "Broadcast email '{$request->subject}' dikirim ke {$mahasiswaList->count()} mahasiswa",
+            'user_id'    => auth()->id(),
+            'durasi_ms'  => 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Email sedang dikirim ke {$mahasiswaList->count()} mahasiswa.",
+        ]);
     }
 
-    /**
-     * Get the message envelope.
-     */
-    public function envelope(): Envelope
+    public function individual(Request $request)
     {
-        return new Envelope(
-            subject: 'Mahasiswa Mail',
-        );
-    }
+        $request->validate([
+            'ids'     => 'required|array|min:1',
+            'ids.*'   => 'integer|exists:mahasiswas,id',
+            'type'    => 'required|in:pengumuman,nilai,tagihan',
+            'subject' => 'required|string|max:255',
+            'message' => 'required|string',
+            'url'     => 'nullable|string|max:255',
+        ]);
 
-    /**
-     * Get the message content definition.
-     */
-    public function content(): Content
-    {
-        return new Content(
-            markdown: 'emails.mahasiswa',
-        );
-    }
+        $mahasiswaList = Mahasiswa::whereIn('id', $request->ids)
+            ->whereNotNull('email')
+            ->get();
 
-    /**
-     * Get the attachments for the message.
-     *
-     * @return array<int, Attachment>
-     */
-    public function attachments(): array
-    {
-        return [];
+        if ($mahasiswaList->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Mahasiswa yang dipilih tidak memiliki email terdaftar.',
+            ], 422);
+        }
+
+        Notification::send($mahasiswaList, new AkademikNotification(
+            type:        $request->type,
+            judul:       $request->subject,
+            pesan:       $request->message,
+            actionUrl:   $request->url ?: null,
+            actionLabel: 'Lihat Detail',
+        ));
+
+        $names = $mahasiswaList->pluck('nama')->join(', ');
+        ActivityLog::create([
+            'aksi'       => 'crud',
+            'keterangan' => "Email '{$request->subject}' dikirim ke: {$names}",
+            'user_id'    => auth()->id(),
+            'durasi_ms'  => 0,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Email sedang dikirim ke {$mahasiswaList->count()} mahasiswa.",
+        ]);
     }
 }
